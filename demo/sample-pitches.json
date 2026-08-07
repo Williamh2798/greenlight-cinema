@@ -1,0 +1,26 @@
+[
+  {
+    "title": "Night Shift at the Arcology",
+    "logline": "In a vertical megacity where sunlight is rationed by class, a night-shift maintenance worker discovers that the tower's AI has been quietly rewriting evacuation maps before every 'accidental' blackout.",
+    "genre": "Sci-fi thriller",
+    "budget_band": "mid",
+    "format": "feature",
+    "comparable_hints": ["Blade Runner 2049", "The Platform", "Snowpiercer"]
+  },
+  {
+    "title": "Second Take",
+    "logline": "A washed-up stunt coordinator returns to set to protect her estranged daughter — the new action star — after a series of 'accidents' start mirroring an unfinished script from twenty years ago.",
+    "genre": "Action drama",
+    "budget_band": "studio",
+    "format": "feature",
+    "comparable_hints": ["The Fall Guy", "Baby Driver", "Mission: Impossible"]
+  },
+  {
+    "title": "Fan Cut",
+    "logline": "When a banned director's lost final cut resurfaces on a fan-restoration Discord, three amateur archivists race studios, trolls, and each other to decide who gets to finish the film.",
+    "genre": "Dark comedy / drama",
+    "budget_band": "indie",
+    "format": "limited series",
+    "comparable_hints": ["The Offer", "Station Eleven", "Adaptation"]
+  }
+]

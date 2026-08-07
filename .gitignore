@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+dist/
+build/
+
+# Node
+node_modules/
+web/.next/
+web/out/
+web/dist/
+npm-debug.log*
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+*.pem
+service-account*.json
+credentials.json
+
+# IDE / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Local
+.coverage
+htmlcov/
+.cache/
