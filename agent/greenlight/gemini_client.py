@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 from typing import Any
 
 from google import genai
@@ -34,6 +33,52 @@ def model_id() -> str:
     return os.environ.get("GEMINI_MODEL", "gemini-3.5-flash")
 
 
+def parse_json_object(text: str) -> dict[str, Any]:
+    """Parse the first balanced JSON object; tolerate trailing model junk."""
+    trimmed = (text or "").strip()
+    if not trimmed:
+        raise ValueError("Gemini returned empty JSON")
+
+    try:
+        data = json.loads(trimmed)
+        if isinstance(data, dict):
+            return data
+    except json.JSONDecodeError:
+        pass
+
+    start = trimmed.find("{")
+    if start < 0:
+        raise ValueError("Gemini did not return JSON")
+
+    depth = 0
+    in_string = False
+    escaped = False
+    for i in range(start, len(trimmed)):
+        ch = trimmed[i]
+        if in_string:
+            if escaped:
+                escaped = False
+            elif ch == "\\":
+                escaped = True
+            elif ch == '"':
+                in_string = False
+            continue
+        if ch == '"':
+            in_string = True
+            continue
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                data = json.loads(trimmed[start : i + 1])
+                if not isinstance(data, dict):
+                    raise ValueError("Gemini JSON was not an object")
+                return data
+
+    raise ValueError("Gemini returned incomplete JSON")
+
+
 def generate_json(prompt: str, *, system: str | None = None) -> dict[str, Any]:
     client = get_genai_client()
     contents = prompt
@@ -47,14 +92,7 @@ def generate_json(prompt: str, *, system: str | None = None) -> dict[str, Any]:
         contents=contents,
         config=config,
     )
-    text = (response.text or "").strip()
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        match = re.search(r"\{[\s\S]*\}", text)
-        if not match:
-            raise
-        return json.loads(match.group(0))
+    return parse_json_object(response.text or "")
 
 
 def generate_text(prompt: str, *, system: str | None = None) -> str:

@@ -173,15 +173,27 @@ export default function HomePage() {
         for (const chunk of chunks) {
           const lines = chunk.split("\n");
           let event = "message";
-          let data = "";
+          const dataLines: string[] = [];
           for (const line of lines) {
             if (line.startsWith("event:")) event = line.slice(6).trim();
-            if (line.startsWith("data:")) data += line.slice(5).trim();
+            if (line.startsWith("data:")) dataLines.push(line.slice(5).trimStart());
           }
+          const data = dataLines.join("\n").trim();
           if (!data) continue;
 
+          let parsed: unknown;
+          try {
+            parsed = JSON.parse(data);
+          } catch (parseErr) {
+            throw new Error(
+              parseErr instanceof Error
+                ? `Stream JSON error: ${parseErr.message}`
+                : "Stream JSON error",
+            );
+          }
+
           if (event === "step") {
-            const step = JSON.parse(data) as {
+            const step = parsed as {
               step: StepName;
               status: StepStatus;
               message: string;
@@ -199,9 +211,9 @@ export default function HomePage() {
               },
             }));
           } else if (event === "brief") {
-            setBrief(JSON.parse(data) as Brief);
+            setBrief(parsed as Brief);
           } else if (event === "error") {
-            const err = JSON.parse(data) as { message: string };
+            const err = parsed as { message: string };
             throw new Error(err.message);
           }
         }
