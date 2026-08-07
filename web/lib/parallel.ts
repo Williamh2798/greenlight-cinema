@@ -36,7 +36,7 @@ export function hitsToText(hits: ResearchHit[], limit = 8): string {
   return hits
     .slice(0, limit)
     .map((hit) => {
-      const excerpt = hit.excerpts.join(" ").slice(0, 600);
+      const excerpt = hit.excerpts.join(" ").slice(0, 220);
       return `- ${hit.title}\n  URL: ${hit.url}\n  Excerpt: ${excerpt}`;
     })
     .join("\n");

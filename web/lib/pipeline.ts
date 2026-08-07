@@ -1,4 +1,4 @@
-import { generateJson, generateText } from "./gemini";
+import { generateJson } from "./gemini";
 import { hitsToText, searchWeb } from "./parallel";
 import type {
   CompRow,
@@ -67,6 +67,65 @@ function parseCompTable(raw: unknown): CompRow[] {
       };
     })
     .filter((r) => r.title);
+}
+
+function buildMarkdownPacket(input: {
+  title: string;
+  recommendation: string;
+  confidence: number;
+  summary: string;
+  scorecard: Scorecard;
+  compTable: CompRow[];
+  marketSignals: string[];
+  riskFlags: string[];
+  diligenceQuestions: string[];
+  mondayMemo: string;
+  sources: SourceCitation[];
+}): string {
+  const conf = Math.round(
+    Math.max(0, Math.min(1, input.confidence || 0)) * 100,
+  );
+  const comps = input.compTable
+    .map((c) => `- **${c.title}** — ${c.why} (${c.signal})`)
+    .join("\n");
+  const markets = input.marketSignals.map((s) => `- ${s}`).join("\n");
+  const risks = input.riskFlags.map((s) => `- ${s}`).join("\n");
+  const qs = input.diligenceQuestions.map((s) => `- ${s}`).join("\n");
+  const sources = input.sources
+    .map((s) => `- [${s.title}](${s.url}) (${s.step})`)
+    .join("\n");
+
+  return [
+    `# Greenlight Decision Packet — ${input.title}`,
+    "",
+    `## Recommendation: ${input.recommendation.replace("_", " ")} (${conf}% confidence)`,
+    "",
+    input.summary,
+    "",
+    "## Scorecard",
+    `- Market timing: ${input.scorecard.market_timing}`,
+    `- Comp fit: ${input.scorecard.comp_fit}`,
+    `- Risk heat: ${input.scorecard.risk_level}`,
+    `- Originality: ${input.scorecard.originality}`,
+    "",
+    "## Comp table",
+    comps || "- n/a",
+    "",
+    "## Market",
+    markets || "- n/a",
+    "",
+    "## Risks",
+    risks || "- n/a",
+    "",
+    "## Diligence questions",
+    qs || "- n/a",
+    "",
+    "## Monday memo",
+    input.mondayMemo,
+    "",
+    "## Sources",
+    sources || "- n/a",
+  ].join("\n");
 }
 
 export async function* streamGreenlightPipeline(
@@ -247,31 +306,37 @@ export async function* streamGreenlightPipeline(
     },
   };
 
+  // Keep research pack compact so the JSON response is not truncated.
   const researchPack = [
     `PITCH\n${pitchText}`,
-    `BUDGET BAND (must weight recommendation): ${budget}`,
-    `FRAMING\n${JSON.stringify(framing, null, 2)}`,
-    `COMPS RESEARCH (Parallel Search)\n${hitsToText(compHits)}`,
-    `MARKET RESEARCH (Parallel Search)\n${hitsToText(marketHits)}`,
-    `RISK RESEARCH (Parallel Search)\n${hitsToText(riskHits)}`,
-    `SLATE / IP COLLISION RESEARCH (Parallel Search)\n${hitsToText(slateHits)}`,
+    `BUDGET BAND: ${budget}`,
+    `AUDIENCE/THEMES: ${JSON.stringify({
+      themes: framing.themes,
+      audience: framing.audience,
+    })}`,
+    `COMPS\n${hitsToText(compHits, 4)}`,
+    `MARKET\n${hitsToText(marketHits, 4)}`,
+    `RISKS\n${hitsToText(riskHits, 4)}`,
+    `SLATE/IP\n${hitsToText(slateHits, 4)}`,
   ].join("\n\n");
 
   const briefJson = await generateJson(
-    `Using ONLY the research pack below, produce a studio greenlight Decision Packet.
+    `Produce a studio greenlight Decision Packet as ONE complete JSON object.
 Weight recommendation against budget band "${budget}".
-Return JSON with keys:
-recommendation: one of greenlight | develop_further | pass
+Keep all strings concise. monday_memo max 4 short sentences.
+Required keys:
+recommendation: "greenlight"|"develop_further"|"pass"
 confidence: number 0-1
-summary: 2-4 sentences
-comps: string[]
-market_signals: string[]
-risk_flags: string[]
-diligence_questions: string[] (3-6)
-scorecard: { market_timing: 0-100, comp_fit: 0-100, risk_level: 0-100 (higher = more risk), originality: 0-100 }
-comp_table: [{ title, why, signal }] (3-5 rows; signal is short e.g. "strong theatrical" / "streaming saturated")
-monday_memo: 6-8 sentence executive memo a producer would paste into Slack before Monday's greenlight meeting — decisive, cite themes from research, no invented URLs
+summary: string (max 2 sentences)
+comps: string[] (max 4)
+market_signals: string[] (max 4)
+risk_flags: string[] (max 4)
+diligence_questions: string[] (max 4)
+scorecard: {market_timing,comp_fit,risk_level,originality} numbers 0-100
+comp_table: [{title,why,signal}] max 3 rows, short strings
+monday_memo: string
 
+Research:
 ${researchPack}`,
     SYSTEM,
   );
@@ -280,10 +345,21 @@ ${researchPack}`,
   const compTable = parseCompTable(briefJson.comp_table);
   const mondayMemo = String(briefJson.monday_memo || briefJson.summary || "");
 
-  const markdown = await generateText(
-    `Write a polished Greenlight Decision Packet in markdown for producers. Include: Recommendation, Scorecard, Why, Comp Table, Market, Risks, Slate/IP, Diligence Checklist, Monday Memo, Sources (use research URLs only). Do not invent sources.\n\nSTRUCTURED:\n${JSON.stringify(briefJson, null, 2)}\n\nSOURCES:\n${JSON.stringify(allSources.slice(0, 24), null, 2)}`,
-    SYSTEM,
-  );
+  const markdown = buildMarkdownPacket({
+    title: pitch.title,
+    recommendation: String(briefJson.recommendation || "develop_further"),
+    confidence: Number(briefJson.confidence ?? 0.5),
+    summary: String(briefJson.summary || ""),
+    scorecard,
+    compTable,
+    marketSignals: ((briefJson.market_signals as string[]) || []).map(String),
+    riskFlags: ((briefJson.risk_flags as string[]) || []).map(String),
+    diligenceQuestions: ((briefJson.diligence_questions as string[]) || []).map(
+      String,
+    ),
+    mondayMemo,
+    sources: allSources.slice(0, 16),
+  });
 
   let recommendation = String(briefJson.recommendation || "develop_further");
   if (!["greenlight", "develop_further", "pass"].includes(recommendation)) {

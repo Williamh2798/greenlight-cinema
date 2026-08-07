@@ -12,15 +12,35 @@ function modelId() {
   return process.env.GEMINI_MODEL || "gemini-3.5-flash";
 }
 
+function extractText(response: {
+  text?: string;
+  candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+}): string {
+  if (response.text) return response.text;
+  const parts = response.candidates?.[0]?.content?.parts || [];
+  return parts.map((p) => p.text || "").join("");
+}
+
+function stripFences(text: string): string {
+  let t = text.trim();
+  if (t.startsWith("```")) {
+    t = t.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
+  }
+  return t.trim();
+}
+
 /** Extract the first balanced JSON object from model output (handles trailing junk). */
 export function parseJsonObject(text: string): Record<string, unknown> {
-  const trimmed = text.trim();
+  const trimmed = stripFences(text);
   if (!trimmed) throw new Error("Gemini returned empty JSON");
 
   try {
-    return JSON.parse(trimmed) as Record<string, unknown>;
+    const parsed = JSON.parse(trimmed) as unknown;
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return parsed as Record<string, unknown>;
+    }
   } catch {
-    // Fall through — often valid JSON followed by extra prose/markdown.
+    // Fall through — often truncated or trailing prose.
   }
 
   const start = trimmed.indexOf("{");
@@ -55,24 +75,48 @@ export function parseJsonObject(text: string): Record<string, unknown> {
     }
   }
 
-  throw new Error("Gemini returned incomplete JSON");
+  throw new Error(
+    `Gemini returned incomplete JSON (${trimmed.length} chars, unclosed braces)`,
+  );
 }
 
 export async function generateJson(
   prompt: string,
   system?: string,
+  opts?: { retries?: number },
 ): Promise<Record<string, unknown>> {
   const ai = getGenAI();
-  const response = await ai.models.generateContent({
-    model: modelId(),
-    contents: prompt,
-    config: {
-      temperature: 0.3,
-      responseMimeType: "application/json",
-      systemInstruction: system,
-    },
-  });
-  return parseJsonObject(response.text || "");
+  const retries = opts?.retries ?? 2;
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await ai.models.generateContent({
+        model: modelId(),
+        contents:
+          attempt === 0
+            ? prompt
+            : `${prompt}\n\nIMPORTANT: Reply with one complete JSON object only. Keep strings short. Do not truncate.`,
+        config: {
+          temperature: attempt === 0 ? 0.25 : 0.1,
+          responseMimeType: "application/json",
+          systemInstruction: system,
+          maxOutputTokens: 8192,
+        },
+      });
+      return parseJsonObject(extractText(response));
+    } catch (err) {
+      lastError = err;
+      const msg = err instanceof Error ? err.message : String(err);
+      if (!msg.includes("incomplete JSON") && !msg.includes("JSON")) {
+        throw err;
+      }
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("Gemini JSON generation failed");
 }
 
 export async function generateText(
@@ -86,7 +130,8 @@ export async function generateText(
     config: {
       temperature: 0.4,
       systemInstruction: system,
+      maxOutputTokens: 4096,
     },
   });
-  return (response.text || "").trim();
+  return extractText(response).trim();
 }
