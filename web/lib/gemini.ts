@@ -9,7 +9,7 @@ export function getGenAI() {
 }
 
 function modelId() {
-  return process.env.GEMINI_MODEL || "gemini-2.5-flash";
+  return process.env.GEMINI_MODEL || "gemini-3.5-flash";
 }
 
 export async function generateJson(

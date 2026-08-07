@@ -6,6 +6,6 @@ export async function GET() {
     gemini_key_configured: Boolean(
       process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY,
     ),
-    model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
+    model: process.env.GEMINI_MODEL || "gemini-3.5-flash",
   });
 }

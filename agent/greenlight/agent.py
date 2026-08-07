@@ -34,7 +34,7 @@ Never invent URLs. Prefer Parallel Search results as your evidence base.
 """
 
 
-def build_greenlight_agent(model: str = "gemini-2.5-flash") -> LlmAgent:
+def build_greenlight_agent(model: str = "gemini-3.5-flash") -> LlmAgent:
     """Create the ADK LlmAgent with Parallel tools imported and attached."""
     return LlmAgent(
         model=model,

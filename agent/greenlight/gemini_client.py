@@ -31,7 +31,7 @@ def get_genai_client() -> genai.Client:
 
 
 def model_id() -> str:
-    return os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+    return os.environ.get("GEMINI_MODEL", "gemini-3.5-flash")
 
 
 def generate_json(prompt: str, *, system: str | None = None) -> dict[str, Any]:

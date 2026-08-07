@@ -43,7 +43,7 @@ def health() -> dict[str, Any]:
         "service": "greenlight",
         "parallel_key_configured": bool(os.environ.get("PARALLEL_API_KEY")),
         "project": os.environ.get("GOOGLE_CLOUD_PROJECT"),
-        "model": os.environ.get("GEMINI_MODEL", "gemini-2.5-flash"),
+        "model": os.environ.get("GEMINI_MODEL", "gemini-3.5-flash"),
     }
 
 

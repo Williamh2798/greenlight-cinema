@@ -71,7 +71,7 @@ gcloud run deploy greenlight-api \
   --region "$REGION" \
   --image "$API_IMAGE" \
   --allow-unauthenticated \
-  --set-env-vars="GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GOOGLE_CLOUD_LOCATION=${REGION},GOOGLE_GENAI_USE_VERTEXAI=true,GEMINI_MODEL=gemini-2.5-flash,CORS_ORIGINS=*" \
+  --set-env-vars="GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GOOGLE_CLOUD_LOCATION=${REGION},GOOGLE_GENAI_USE_VERTEXAI=true,GEMINI_MODEL=gemini-3.5-flash,CORS_ORIGINS=*" \
   --set-secrets="PARALLEL_API_KEY=PARALLEL_API_KEY:latest" \
   --memory=2Gi \
   --cpu=2 \

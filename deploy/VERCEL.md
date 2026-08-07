@@ -10,7 +10,7 @@ Project: `leadraa/greenlight-cinema` (linked from `web/`)
 |------|---------|
 | `GOOGLE_API_KEY` | Gemini API (Google AI / Cloud) |
 | `PARALLEL_API_KEY` | Parallel Search API |
-| `GEMINI_MODEL` | optional, default `gemini-2.5-flash` |
+| `GEMINI_MODEL` | optional, default `gemini-3.5-flash` |
 
 ```bash
 cd web
