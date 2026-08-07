@@ -36,8 +36,13 @@ Pre-greenlight research is still tribal knowledge and browser tabs. Development 
 2. Streaming step events made the product feel production-ready for demos and for producers who want auditability.
 3. Constraining synthesis to provided Parallel URLs prevents hallucinated citations — critical for a diligence tool.
 
-## Links to fill at submit time
+## Links
 
-- Hosted Project URL: _(after `deploy/deploy.sh`)_
-- Demo video: _(YouTube/Vimeo)_
-- Repo: _(public GitHub with Apache-2.0)_
+- Hosted Project URL: https://greenlight-cinema.vercel.app
+- Health: https://greenlight-cinema.vercel.app/api/health
+- Repo: https://github.com/Williamh2798/greenlight-cinema (Apache-2.0)
+- Demo video: _(record using demo/DEMO_SCRIPT.md — YouTube/Vimeo public)_
+
+## Required secret before live demos
+
+Set `PARALLEL_API_KEY` in Vercel project env (Production + Preview) from https://platform.parallel.ai — then `vercel --prod` again.
