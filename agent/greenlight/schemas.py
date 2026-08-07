@@ -35,6 +35,19 @@ class StepEvent(BaseModel):
     data: dict[str, Any] | None = None
 
 
+class Scorecard(BaseModel):
+    market_timing: float = Field(..., ge=0, le=100)
+    comp_fit: float = Field(..., ge=0, le=100)
+    risk_level: float = Field(..., ge=0, le=100)
+    originality: float = Field(..., ge=0, le=100)
+
+
+class CompRow(BaseModel):
+    title: str
+    why: str
+    signal: str
+
+
 class GreenlightBrief(BaseModel):
     title: str
     recommendation: Literal["greenlight", "develop_further", "pass"]
@@ -44,5 +57,8 @@ class GreenlightBrief(BaseModel):
     market_signals: list[str] = Field(default_factory=list)
     risk_flags: list[str] = Field(default_factory=list)
     diligence_questions: list[str] = Field(default_factory=list)
+    scorecard: Scorecard
+    monday_memo: str
+    comp_table: list[CompRow] = Field(default_factory=list)
     sources: list[SourceCitation] = Field(default_factory=list)
     markdown: str

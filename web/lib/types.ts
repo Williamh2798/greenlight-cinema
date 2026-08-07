@@ -28,6 +28,19 @@ export type StepEvent = {
   data?: Record<string, unknown> | null;
 };
 
+export type Scorecard = {
+  market_timing: number;
+  comp_fit: number;
+  risk_level: number;
+  originality: number;
+};
+
+export type CompRow = {
+  title: string;
+  why: string;
+  signal: string;
+};
+
 export type GreenlightBrief = {
   title: string;
   recommendation: "greenlight" | "develop_further" | "pass";
@@ -37,6 +50,9 @@ export type GreenlightBrief = {
   market_signals: string[];
   risk_flags: string[];
   diligence_questions: string[];
+  scorecard: Scorecard;
+  monday_memo: string;
+  comp_table: CompRow[];
   sources: SourceCitation[];
   markdown: string;
 };
